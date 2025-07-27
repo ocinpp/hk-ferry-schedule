@@ -28,13 +28,13 @@ const isHoliday = computed(() => isPublicHoliday(currentTime.value));
       </div>
 
       <!-- Current Time Display -->
-      <!-- <div class="mb-8">
+      <div class="mb-8">
         <CurrentTime
           :current-time="currentTime"
           :day-type="dayType"
           :is-holiday="isHoliday"
         />
-      </div> -->
+      </div>
 
       <!-- Loading State -->
       <div v-if="loading" class="text-center py-12">
