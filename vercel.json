@@ -5,7 +5,7 @@
       "destination": "https://www.sunferry.com.hk//eta/timetable/SunFerry_central_muiwo_timetable_eng.csv"
     },
     {
-      "source": "/api/ferry-holidays",
+      "source": "/api/holidays",
       "destination": "https://www.1823.gov.hk/common/ical/en.json"
     }
   ]
