@@ -53,7 +53,11 @@ defineProps<{
         }}</span>
       </div>
 
-      {{ ferry.remarks }}
+      <div class="flex justify-between items-center">
+        <span class="text-sm text-ocean-700 font-semibold">{{
+          ferry.remarks
+        }}</span>
+      </div>
     </div>
   </div>
 </template>
