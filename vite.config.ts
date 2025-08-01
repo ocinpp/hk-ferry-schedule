@@ -16,6 +16,16 @@ export default defineConfig({
         target: 'https://www.1823.gov.hk',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/holidays/, '/common/ical/en.json')
+      },
+      '/api/eta/mwce': {
+        target: 'https://www.sunferry.com.hk',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/eta\/mwce/, '/eta/?route=MWCE')
+      },
+      '/api/eta/cemw': {
+        target: 'https://www.sunferry.com.hk',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/eta\/cemw/, '/eta/?route=CEMW')
       }
     }
   }

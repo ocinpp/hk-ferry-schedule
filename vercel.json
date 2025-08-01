@@ -7,6 +7,14 @@
     {
       "source": "/api/holidays",
       "destination": "https://www.1823.gov.hk/common/ical/en.json"
+    },
+    {
+      "source": "/api/eta/mwce",
+      "destination": "https://www.sunferry.com.hk/eta/?route=MWCE"
+    },
+    {
+      "source": "/api/eta/cemw",
+      "destination": "https://www.sunferry.com.hk/eta/?route=CEMW"
     }
   ]
 }
