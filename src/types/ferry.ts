@@ -22,3 +22,10 @@ export interface PublicHoliday {
     'date-time'?: string;
   };
 }
+
+export interface NextArrival {
+  direction: string;
+  arrivalTime: string;
+  timeUntil: string;
+  isToday: boolean;
+}

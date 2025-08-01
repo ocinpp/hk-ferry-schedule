@@ -2,12 +2,13 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 import Papa from 'papaparse'
 import { format, addDays, parse, isAfter } from 'date-fns'
-import type { FerryScheduleEntry, NextFerry, PublicHoliday } from '../types/ferry'
+import type { FerryScheduleEntry, NextFerry, PublicHoliday, NextArrival } from '../types/ferry'
 
 export function useFerrySchedule() {
   const scheduleData = ref<FerryScheduleEntry[]>([])
   const publicHolidays = ref<string[]>([])
   const nextFerries = ref<NextFerry[]>([])
+  const nextArrivals = ref<NextArrival[]>([])
   const currentTime = ref(new Date())
   const loading = ref(true)
   const error = ref('')
@@ -74,6 +75,89 @@ export function useFerrySchedule() {
     } catch (err) {
       console.error('Error fetching holidays:', err)
       // Continue without holiday data
+    }
+  }
+
+  const fetchETAData = async () => {
+    try {
+      const [mwceResponse, cemwResponse] = await Promise.all([
+        axios.get('/api/eta/mwce'),
+        axios.get('/api/eta/cemw')
+      ])
+
+      const arrivals: NextArrival[] = []
+      const now = currentTime.value
+
+      // Helper function to parse ETA time and calculate time until arrival
+      const parseETATime = (etaTimeStr: string): { etaTime: Date, isToday: boolean } | null => {
+        if (!etaTimeStr || !etaTimeStr.match(/^\d{2}:\d{2}$/)) return null
+
+        const [hours, minutes] = etaTimeStr.split(':').map(Number)
+        const today = new Date(now)
+        const tomorrow = new Date(now)
+        tomorrow.setDate(tomorrow.getDate() + 1)
+
+        // Create potential ETA times for today and tomorrow
+        const etaToday = new Date(today)
+        etaToday.setHours(hours, minutes, 0, 0)
+
+        const etaTomorrow = new Date(tomorrow)
+        etaTomorrow.setHours(hours, minutes, 0, 0)
+
+        // If ETA today is in the future, use it
+        if (isAfter(etaToday, now)) {
+          return { etaTime: etaToday, isToday: true }
+        }
+
+        // If ETA today has passed but the hour differnce is more than 12,
+        // assume it's for tomorrow
+        // as the difference is too large
+        const currentHour = now.getHours()
+        if (Math.abs(currentHour - hours) > 12) {
+          return { etaTime: etaTomorrow, isToday: false }
+        }
+
+        // Otherwise, if the ETA time is earlier than current time,
+        // it's likely to be really in the past
+        return null
+      }
+
+      // Process Mui Wo to Central ETA
+      if (mwceResponse.data?.data?.[0]?.eta) {
+        const eta = parseETATime(mwceResponse.data.data[0].eta)
+        if (eta?.etaTime) {
+          const timeUntil = Math.ceil((eta.etaTime.getTime() - now.getTime()) / (1000 * 60))
+          if (timeUntil > 0) {
+            arrivals.push({
+              direction: 'Mui Wo to Central',
+              arrivalTime: format(eta.etaTime, 'HH:mm'),
+              timeUntil: timeUntil > 60 ? `${Math.floor(timeUntil / 60)}h ${timeUntil % 60}m` : `${timeUntil}m`,
+              isToday: eta.isToday
+            })
+          }
+        }
+      }
+
+      // Process Central to Mui Wo ETA
+      if (cemwResponse.data?.data?.[0]?.eta) {
+        const eta = parseETATime(cemwResponse.data.data[0].eta)
+        if (eta?.etaTime) {
+          const timeUntil = Math.ceil((eta.etaTime.getTime() - now.getTime()) / (1000 * 60))
+          if (timeUntil > 0) {
+            arrivals.push({
+              direction: 'Central to Mui Wo',
+              arrivalTime: format(eta.etaTime, 'HH:mm'),
+              timeUntil: timeUntil > 60 ? `${Math.floor(timeUntil / 60)}h ${timeUntil % 60}m` : `${timeUntil}m`,
+              isToday: eta.isToday
+            })
+          }
+        }
+      }
+
+      nextArrivals.value = arrivals
+    } catch (err) {
+      console.error('Error fetching ETA data:', err)
+      // Continue without ETA data
     }
   }
 
@@ -207,11 +291,12 @@ export function useFerrySchedule() {
     currentTime.value = new Date()
     // Always refresh ferry data when time updates to ensure current departures
     findNextFerries()
+    fetchETAData()
   }
 
   const initialize = async () => {
     loading.value = true
-    await Promise.all([fetchScheduleData(), fetchPublicHolidays()])
+    await Promise.all([fetchScheduleData(), fetchPublicHolidays(), fetchETAData()])
     findNextFerries()
     loading.value = false
   }
@@ -240,6 +325,7 @@ export function useFerrySchedule() {
   return {
     scheduleData,
     nextFerries,
+    nextArrivals,
     currentTime,
     loading,
     error,
