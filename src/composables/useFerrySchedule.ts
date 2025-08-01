@@ -205,9 +205,8 @@ export function useFerrySchedule() {
 
   const updateTime = () => {
     currentTime.value = new Date()
-    if (scheduleData.value.length > 0) {
-      findNextFerries()
-    }
+    // Always refresh ferry data when time updates to ensure current departures
+    findNextFerries()
   }
 
   const initialize = async () => {
@@ -219,7 +218,17 @@ export function useFerrySchedule() {
 
   onMounted(() => {
     initialize()
-    timeInterval = setInterval(updateTime, 60000) // Update every minute
+
+    // Calculate milliseconds until next minute boundary
+    const now = new Date()
+    const msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds()
+
+    // Set initial timeout to sync with minute boundary
+    setTimeout(() => {
+      updateTime() // Update immediately when we hit the minute boundary
+      // Then set regular interval for every minute
+      timeInterval = setInterval(updateTime, 60000)
+    }, msUntilNextMinute)
   })
 
   onUnmounted(() => {
