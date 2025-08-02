@@ -23,7 +23,7 @@ const isHoliday = computed(() => isPublicHoliday(currentTime.value));
   <div class="min-h-screen bg-gradient-to-br from-ocean-50 to-blue-100">
     <div class="container mx-auto px-4 py-4 max-w-4xl">
       <!-- Header -->
-      <div class="text-center mb-8">
+      <div class="text-center mb-6">
         <h1 class="text-3xl font-bold text-gray-900 mb-2">
           Central ⇄ Mui Wo Ferry
         </h1>
