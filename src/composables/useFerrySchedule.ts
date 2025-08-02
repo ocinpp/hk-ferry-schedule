@@ -1,8 +1,11 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
+import axiosRetry from 'axios-retry'
 import Papa from 'papaparse'
 import { format, addDays, parse, isAfter } from 'date-fns'
 import type { FerryScheduleEntry, NextFerry, PublicHoliday, NextArrival } from '../types/ferry'
+
+axiosRetry(axios, { retries: 3 });
 
 export function useFerrySchedule() {
   const scheduleData = ref<FerryScheduleEntry[]>([])
@@ -128,8 +131,11 @@ export function useFerrySchedule() {
         if (eta?.etaTime) {
           const timeUntil = Math.ceil((eta.etaTime.getTime() - now.getTime()) / (1000 * 60))
           if (timeUntil > 0) {
+            const direction = 'Mui Wo to Central'
             arrivals.push({
-              direction: 'Mui Wo to Central',
+              direction,
+              from: direction?.split(' to ')[0] || "",
+              to: direction?.split(' to ')[1] || "",
               arrivalTime: format(eta.etaTime, 'HH:mm'),
               timeUntil: timeUntil > 60 ? `${Math.floor(timeUntil / 60)}h ${timeUntil % 60}m` : `${timeUntil}m`,
               isToday: eta.isToday
@@ -144,8 +150,11 @@ export function useFerrySchedule() {
         if (eta?.etaTime) {
           const timeUntil = Math.ceil((eta.etaTime.getTime() - now.getTime()) / (1000 * 60))
           if (timeUntil > 0) {
+            const direction = 'Central to Mui Wo'
             arrivals.push({
-              direction: 'Central to Mui Wo',
+              direction,
+              from: direction?.split(' to ')[0] || "",
+              to: direction?.split(' to ')[1] || "",
               arrivalTime: format(eta.etaTime, 'HH:mm'),
               timeUntil: timeUntil > 60 ? `${Math.floor(timeUntil / 60)}h ${timeUntil % 60}m` : `${timeUntil}m`,
               isToday: eta.isToday
@@ -242,6 +251,8 @@ export function useFerrySchedule() {
           const timeUntil = Math.ceil((departureTime.getTime() - now.getTime()) / (1000 * 60))
           nextFerry = {
             direction,
+            from: direction?.split(' to ')[0] || "",
+            to: direction?.split(' to ')[1] || "",
             departureTime: format(departureTime, 'HH:mm'),
             arrivalTime: format(arrivalTime, 'HH:mm'),
             timeUntil: timeUntil > 60 ? `${Math.floor(timeUntil / 60)}h ${timeUntil % 60}m` : `${timeUntil}m`,

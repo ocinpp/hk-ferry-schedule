@@ -37,6 +37,11 @@ defineProps<{
 
     <div class="space-y-3">
       <div class="flex justify-between items-center">
+        <span class="text-sm text-gray-700">Arriving:</span>
+        <span class="text-xl font-bold text-ocean-700">{{ arrival.to }}</span>
+      </div>
+
+      <div class="flex justify-between items-center">
         <span class="text-sm text-gray-700">Arrival:</span>
         <span class="text-xl font-bold text-ocean-700">{{
           arrival.arrivalTime
