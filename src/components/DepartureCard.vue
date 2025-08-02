@@ -33,6 +33,11 @@ defineProps<{
 
     <div class="space-y-3">
       <div class="flex justify-between items-center">
+        <span class="text-sm text-gray-700">Departing:</span>
+        <span class="text-xl font-bold text-ocean-700">{{ ferry.from }}</span>
+      </div>
+
+      <div class="flex justify-between items-center">
         <span class="text-sm text-gray-700">Departure:</span>
         <span class="text-xl font-bold text-ocean-700">{{
           ferry.departureTime

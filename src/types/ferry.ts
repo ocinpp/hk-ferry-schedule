@@ -8,6 +8,8 @@ export interface FerryScheduleEntry {
 
 export interface NextFerry {
   direction: string;
+  from: string;
+  to: string;
   departureTime: string;
   arrivalTime: string;
   timeUntil: string;
@@ -21,4 +23,13 @@ export interface PublicHoliday {
     date?: string;
     'date-time'?: string;
   };
+}
+
+export interface NextArrival {
+  direction: string;
+  from: string;
+  to: string;
+  arrivalTime: string;
+  timeUntil: string;
+  isToday: boolean;
 }

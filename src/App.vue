@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useFerrySchedule } from "./composables/useFerrySchedule";
-import FerryCard from "./components/FerryCard.vue";
+import DepartureCard from "./components/DepartureCard.vue";
+import ArrivalCard from "./components/ArrivalCard.vue";
 import CurrentTime from "./components/CurrentTime.vue";
 
 const {
   nextFerries,
+  nextArrivals,
   currentTime,
   loading,
   error,
@@ -19,10 +21,10 @@ const isHoliday = computed(() => isPublicHoliday(currentTime.value));
 
 <template>
   <div class="min-h-screen bg-gradient-to-br from-ocean-50 to-blue-100">
-    <div class="container mx-auto px-4 py-8 max-w-4xl">
+    <div class="container mx-auto px-4 py-4 max-w-4xl">
       <!-- Header -->
-      <div class="text-center mb-8">
-        <h1 class="text-4xl font-bold text-gray-900 mb-2">
+      <div class="text-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">
           Central ⇄ Mui Wo Ferry
         </h1>
       </div>
@@ -62,7 +64,7 @@ const isHoliday = computed(() => isPublicHoliday(currentTime.value));
         </h2>
 
         <div v-if="nextFerries.length > 0" class="grid gap-6 md:grid-cols-2">
-          <FerryCard
+          <DepartureCard
             v-for="ferry in nextFerries"
             :key="ferry.direction"
             :ferry="ferry"
@@ -74,6 +76,24 @@ const isHoliday = computed(() => isPublicHoliday(currentTime.value));
           <p class="text-gray-700 mt-2">
             Please check the schedule or try again later
           </p>
+        </div>
+
+        <!-- Next Arrivals -->
+        <h2 class="text-2xl font-bold text-gray-900 text-center mb-6 mt-6">
+          Next Ferry Arrivals
+        </h2>
+
+        <div v-if="nextArrivals.length > 0" class="grid gap-6 md:grid-cols-2">
+          <ArrivalCard
+            v-for="arrival in nextArrivals"
+            :key="arrival.direction"
+            :arrival="arrival"
+          />
+        </div>
+
+        <div v-else class="text-center py-12">
+          <div class="text-gray-800 text-lg">🚫 No upcoming arrivals found</div>
+          <p class="text-gray-700 mt-2">No ferries currently en route</p>
         </div>
       </div>
 
