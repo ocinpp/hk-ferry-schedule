@@ -280,6 +280,8 @@ export function useFerrySchedule() {
           const timeUntil = Math.ceil((departureTime.getTime() - now.getTime()) / (1000 * 60))
           nextFerry = {
             direction,
+            from: direction?.split(' to ')[0] || "",
+            to: direction?.split(' to ')[1] || "",
             departureTime: format(departureTime, 'HH:mm'),
             arrivalTime: format(arrivalTime, 'HH:mm'),
             timeUntil: timeUntil > 60 ? `${Math.floor(timeUntil / 60)}h ${timeUntil % 60}m` : `${timeUntil}m`,
