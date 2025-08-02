@@ -112,56 +112,70 @@ export function useFerrySchedule() {
           return { etaTime: etaToday, isToday: true }
         }
 
-        // If ETA today has passed but the hour differnce is more than 12,
+        // If ETA today has passed but the hour difference is more than 12,
         // assume it's for tomorrow
-        // as the difference is too large
         const currentHour = now.getHours()
         if (Math.abs(currentHour - hours) > 12) {
           return { etaTime: etaTomorrow, isToday: false }
         }
 
-        // Otherwise, if the ETA time is earlier than current time,
-        // it's likely to be really in the past
+        // If the ETA time is earlier than current time and within 12 hours,
+        // it's likely in the past, so ignore it
         return null
       }
 
-      // Process Mui Wo to Central ETA
-      if (mwceResponse.data?.data?.[0]?.eta) {
-        const eta = parseETATime(mwceResponse.data.data[0].eta)
-        if (eta?.etaTime) {
-          const timeUntil = Math.ceil((eta.etaTime.getTime() - now.getTime()) / (1000 * 60))
-          if (timeUntil > 0) {
-            const direction = 'Mui Wo to Central'
-            arrivals.push({
-              direction,
-              from: direction?.split(' to ')[0] || "",
-              to: direction?.split(' to ')[1] || "",
-              arrivalTime: format(eta.etaTime, 'HH:mm'),
-              timeUntil: timeUntil > 60 ? `${Math.floor(timeUntil / 60)}h ${timeUntil % 60}m` : `${timeUntil}m`,
-              isToday: eta.isToday
-            })
+      // Process Mui Wo to Central ETA - loop through all data entries
+      if (mwceResponse.data?.data && Array.isArray(mwceResponse.data.data)) {
+        for (const ferry of mwceResponse.data.data) {
+          if (ferry.eta) {
+            const eta = parseETATime(ferry.eta)
+            if (eta?.etaTime) {
+              const timeUntil = Math.ceil((eta.etaTime.getTime() - now.getTime()) / (1000 * 60))
+              if (timeUntil > 0) {
+                const direction = 'Mui Wo to Central'
+                arrivals.push({
+                  direction,
+                  from: direction?.split(' to ')[0] || "",
+                  to: direction?.split(' to ')[1] || "",
+                  arrivalTime: format(eta.etaTime, 'HH:mm'),
+                  timeUntil: timeUntil > 60 ? `${Math.floor(timeUntil / 60)}h ${timeUntil % 60}m` : `${timeUntil}m`,
+                  isToday: eta.isToday
+                })
+              }
+            }
           }
         }
       }
 
-      // Process Central to Mui Wo ETA
-      if (cemwResponse.data?.data?.[0]?.eta) {
-        const eta = parseETATime(cemwResponse.data.data[0].eta)
-        if (eta?.etaTime) {
-          const timeUntil = Math.ceil((eta.etaTime.getTime() - now.getTime()) / (1000 * 60))
-          if (timeUntil > 0) {
-            const direction = 'Central to Mui Wo'
-            arrivals.push({
-              direction,
-              from: direction?.split(' to ')[0] || "",
-              to: direction?.split(' to ')[1] || "",
-              arrivalTime: format(eta.etaTime, 'HH:mm'),
-              timeUntil: timeUntil > 60 ? `${Math.floor(timeUntil / 60)}h ${timeUntil % 60}m` : `${timeUntil}m`,
-              isToday: eta.isToday
-            })
+      // Process Central to Mui Wo ETA - loop through all data entries
+      if (cemwResponse.data?.data && Array.isArray(cemwResponse.data.data)) {
+        for (const ferry of cemwResponse.data.data) {
+          if (ferry.eta) {
+            const eta = parseETATime(ferry.eta)
+            if (eta?.etaTime) {
+              const timeUntil = Math.ceil((eta.etaTime.getTime() - now.getTime()) / (1000 * 60))
+              if (timeUntil > 0) {
+                const direction = 'Central to Mui Wo'
+                arrivals.push({
+                  direction,
+                  from: direction?.split(' to ')[0] || "",
+                  to: direction?.split(' to ')[1] || "",
+                  arrivalTime: format(eta.etaTime, 'HH:mm'),
+                  timeUntil: timeUntil > 60 ? `${Math.floor(timeUntil / 60)}h ${timeUntil % 60}m` : `${timeUntil}m`,
+                  isToday: eta.isToday
+                })
+              }
+            }
           }
         }
       }
+
+      // Sort arrivals by arrival time (earliest first)
+      arrivals.sort((a, b) => {
+        const timeA = parse(a.arrivalTime, 'HH:mm', new Date())
+        const timeB = parse(b.arrivalTime, 'HH:mm', new Date())
+        return timeA.getTime() - timeB.getTime()
+      })
 
       nextArrivals.value = arrivals
     } catch (err) {
@@ -324,8 +338,8 @@ export function useFerrySchedule() {
     // Set initial timeout to sync with minute boundary
     setTimeout(() => {
       updateTime() // Update immediately when we hit the minute boundary
-      // Then set regular interval for every minute
-      timeInterval = setInterval(updateTime, 60000)
+      // Then set regular interval for every 0.5 minute
+      timeInterval = setInterval(updateTime, 30000)
     }, msUntilNextMinute)
   })
 
