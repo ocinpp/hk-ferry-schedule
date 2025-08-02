@@ -15,6 +15,7 @@ export function useFerrySchedule() {
   const currentTime = ref(new Date())
   const loading = ref(true)
   const error = ref('')
+  const isVisible = ref(true)
 
   const remarksMap = new Map();
   remarksMap.set("1", "Ordinary ferry service and freight service is allowed");
@@ -321,6 +322,53 @@ export function useFerrySchedule() {
     fetchETAData()
   }
 
+  // Handle visibility change to detect when tab becomes active/inactive
+  const handleVisibilityChange = () => {
+    isVisible.value = !document.hidden
+
+    if (isVisible.value) {
+      // Tab became visible - immediately update data
+      console.log('Tab became visible - refreshing data')
+      updateTime()
+
+      // Reset interval to ensure proper timing
+      if (timeInterval) {
+        clearInterval(timeInterval)
+      }
+
+      // Recalculate sync with minute boundary
+      const now = new Date()
+      const msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds()
+
+      // Schedule the next update (every 30 seconds)
+      setTimeout(() => {
+        updateTime()
+        timeInterval = setInterval(updateTime, 30000)
+      }, msUntilNextMinute)
+    }
+  }
+
+  // Use requestAnimationFrame for more reliable timing
+  const scheduleNextUpdate = () => {
+    const now = new Date()
+    const msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds()
+
+    const timeoutId = setTimeout(() => {
+      if (isVisible.value) {
+        updateTime()
+      }
+
+      // Schedule the next update (every 30 seconds)
+      timeInterval = setInterval(() => {
+        if (isVisible.value) {
+          updateTime()
+        }
+      }, 30000)
+    }, msUntilNextMinute)
+
+    return timeoutId
+  }
+
   const initialize = async () => {
     loading.value = true
     await Promise.all([fetchScheduleData(), fetchPublicHolidays(), fetchETAData()])
@@ -331,22 +379,18 @@ export function useFerrySchedule() {
   onMounted(() => {
     initialize()
 
-    // Calculate milliseconds until next minute boundary
-    const now = new Date()
-    const msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds()
+    // Add visibility change listener
+    document.addEventListener('visibilitychange', handleVisibilityChange)
 
-    // Set initial timeout to sync with minute boundary
-    setTimeout(() => {
-      updateTime() // Update immediately when we hit the minute boundary
-      // Then set regular interval for every 0.5 minute
-      timeInterval = setInterval(updateTime, 30000)
-    }, msUntilNextMinute)
+    // Schedule the first update
+    scheduleNextUpdate()
   })
 
   onUnmounted(() => {
     if (timeInterval) {
       clearInterval(timeInterval)
     }
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
   })
 
   return {
