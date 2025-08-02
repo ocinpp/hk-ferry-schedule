@@ -16,5 +16,16 @@
       "source": "/api/eta/cemw",
       "destination": "https://www.sunferry.com.hk/eta/?route=CEMW"
     }
+  ],
+  "headers": [
+    {
+      "source": "/api/*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    }
   ]
 }
