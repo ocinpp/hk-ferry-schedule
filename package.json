@@ -12,6 +12,7 @@
     "@tailwindcss/vite": "^4.1.11",
     "@types/papaparse": "^5.3.16",
     "axios": "^1.11.0",
+    "axios-retry": "^4.5.0",
     "date-fns": "^4.1.0",
     "papaparse": "^5.5.3",
     "tailwindcss": "^4.1.11",
