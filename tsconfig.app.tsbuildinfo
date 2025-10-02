@@ -1,0 +1,1 @@
+{"root":["./src/main.ts","./src/vite-env.d.ts","./src/composables/useferryschedule.ts","./src/types/ferry.ts","./src/app.vue","./src/components/arrivalcard.vue","./src/components/currenttime.vue","./src/components/departurecard.vue"],"version":"5.8.3"}

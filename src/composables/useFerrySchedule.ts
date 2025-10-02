@@ -3,16 +3,24 @@ import axios from 'axios'
 import axiosRetry from 'axios-retry'
 import Papa from 'papaparse'
 import { format, addDays, parse, isAfter } from 'date-fns'
+import { toZonedTime } from 'date-fns-tz'
 import type { FerryScheduleEntry, NextFerry, PublicHoliday, NextArrival } from '../types/ferry'
 
 axiosRetry(axios, { retries: 3 });
+
+const HONG_KONG_TIMEZONE = 'Asia/Hong_Kong'
+
+// Helper function to get current Hong Kong time
+const getHongKongTime = (): Date => {
+  return toZonedTime(new Date(), HONG_KONG_TIMEZONE)
+}
 
 export function useFerrySchedule() {
   const scheduleData = ref<FerryScheduleEntry[]>([])
   const publicHolidays = ref<string[]>([])
   const nextFerries = ref<NextFerry[]>([])
   const nextArrivals = ref<NextArrival[]>([])
-  const currentTime = ref(new Date())
+  const currentTime = ref(getHongKongTime())
   const loading = ref(true)
   const error = ref('')
   const isVisible = ref(true)
@@ -97,11 +105,12 @@ export function useFerrySchedule() {
         if (!etaTimeStr || !etaTimeStr.match(/^\d{2}:\d{2}$/)) return null
 
         const [hours, minutes] = etaTimeStr.split(':').map(Number)
-        const today = new Date(now)
-        const tomorrow = new Date(now)
+        // Use Hong Kong time for today and tomorrow
+        const today = getHongKongTime()
+        const tomorrow = new Date(today)
         tomorrow.setDate(tomorrow.getDate() + 1)
 
-        // Create potential ETA times for today and tomorrow
+        // Create potential ETA times for today and tomorrow in Hong Kong timezone
         const etaToday = new Date(today)
         etaToday.setHours(hours, minutes, 0, 0)
 
@@ -216,7 +225,7 @@ export function useFerrySchedule() {
 
   const findNextFerries = () => {
     const now = currentTime.value
-    const today = new Date(now)
+    const today = getHongKongTime()
     const tomorrow = addDays(today, 1)
 
     const todayType = getDayType(today)
@@ -316,7 +325,7 @@ export function useFerrySchedule() {
   }
 
   const updateTime = () => {
-    currentTime.value = new Date()
+    currentTime.value = getHongKongTime()
     // Always refresh ferry data when time updates to ensure current departures
     findNextFerries()
     fetchETAData()
@@ -336,8 +345,8 @@ export function useFerrySchedule() {
         clearInterval(timeInterval)
       }
 
-      // Recalculate sync with minute boundary
-      const now = new Date()
+      // Recalculate sync with minute boundary using Hong Kong time
+      const now = getHongKongTime()
       const msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds()
 
       // Schedule the next update (every 30 seconds)
@@ -350,7 +359,7 @@ export function useFerrySchedule() {
 
   // Use requestAnimationFrame for more reliable timing
   const scheduleNextUpdate = () => {
-    const now = new Date()
+    const now = getHongKongTime()
     const msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds()
 
     const timeoutId = setTimeout(() => {
