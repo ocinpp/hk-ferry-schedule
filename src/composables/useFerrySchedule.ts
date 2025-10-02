@@ -4,7 +4,7 @@ import axiosRetry from 'axios-retry'
 import Papa from 'papaparse'
 import { format, addDays, parse, isAfter } from 'date-fns'
 import { toZonedTime } from 'date-fns-tz'
-import type { FerryScheduleEntry, NextFerry, PublicHoliday, NextArrival } from '../types/ferry'
+import type { FerryScheduleEntry, NextFerry, NextArrival } from '../types/ferry'
 
 axiosRetry(axios, { retries: 3 });
 
@@ -76,17 +76,40 @@ export function useFerrySchedule() {
       const response = await axios.get('/api/holidays')
       const holidays = response.data.vcalendar?.[0]?.vevent || []
 
-      publicHolidays.value = holidays.map((holiday: PublicHoliday) => {
-        const dateStr = holiday.dtstart?.date || holiday.dtstart?.['date-time']
-        if (dateStr) {
-          return format(parse(dateStr.substring(0, 8), 'yyyyMMdd', new Date()), 'yyyy-MM-dd')
+      // console.log('Raw holiday data:', holidays.slice(0, 3)) // Debug log
+
+      publicHolidays.value = holidays.map((holiday: any) => {
+        // The API returns dtstart as an array where first element is the date string
+        let dateStr = ''
+
+        if (Array.isArray(holiday.dtstart)) {
+          dateStr = holiday.dtstart[0]
+        } else if (holiday.dtstart?.date) {
+          dateStr = holiday.dtstart.date
+        } else if (holiday.dtstart?.['date-time']) {
+          dateStr = holiday.dtstart['date-time']
+        }
+
+        if (dateStr && typeof dateStr === 'string') {
+          // Parse the date string (format: YYYYMMDD) using Hong Kong timezone
+          const cleanDateStr = dateStr.substring(0, 8)
+          if (cleanDateStr.match(/^\d{8}$/)) {
+            // Parse in Hong Kong timezone to ensure consistency
+            const parsedDate = parse(cleanDateStr, 'yyyyMMdd', getHongKongTime())
+            return format(parsedDate, 'yyyy-MM-dd')
+          }
         }
         return ''
       }).filter(Boolean)
 
+      // console.log('Processed holidays:', publicHolidays.value.slice(0, 5)) // Debug log
+      console.log(`✅ Loaded ${publicHolidays.value.length} Hong Kong public holidays`)
+
     } catch (err) {
       console.error('Error fetching holidays:', err)
-      // Continue without holiday data
+      // Don't set error.value here as it might interfere with other functionality
+      // Just log the error and continue without holiday data
+      console.warn('Continuing without public holiday data')
     }
   }
 
@@ -195,17 +218,35 @@ export function useFerrySchedule() {
   }
 
   const isPublicHoliday = (date: Date): boolean => {
-    const dateStr = format(date, 'yyyy-MM-dd')
-    return publicHolidays.value.includes(dateStr)
+    // Ensure we're checking the date in Hong Kong timezone
+    const hkDate = toZonedTime(date, HONG_KONG_TIMEZONE)
+    const dateStr = format(hkDate, 'yyyy-MM-dd')
+    const isHoliday = publicHolidays.value.includes(dateStr)
+
+    // Debug logging (only for holidays)
+    if (isHoliday) {
+      console.log(`🎉 Public holiday detected: ${dateStr}`)
+    }
+
+    return isHoliday
   }
 
   const getDayType = (date: Date): string => {
-    const dayOfWeek = date.getDay()
-    const isHoliday = isPublicHoliday(date)
+    // Ensure we're working with Hong Kong timezone
+    const hkDate = toZonedTime(date, HONG_KONG_TIMEZONE)
+    const dayOfWeek = hkDate.getDay()
+    const isHoliday = isPublicHoliday(hkDate)
 
-    if (isHoliday || dayOfWeek === 0) return 'Sundays and public holidays' // Sunday or Public Holiday
-    if (dayOfWeek === 6) return 'Saturdays except public holidays' // Saturday
-    return 'Mondays to Fridays except public holidays' // Monday to Friday
+    let dayType = ''
+    if (isHoliday || dayOfWeek === 0) {
+      dayType = 'Sundays and public holidays' // Sunday or Public Holiday
+    } else if (dayOfWeek === 6) {
+      dayType = 'Saturdays except public holidays' // Saturday
+    } else {
+      dayType = 'Mondays to Fridays except public holidays' // Monday to Friday
+    }
+
+    return dayType
   }
 
   const parseTime = (timeStr: string, date: Date): Date => {
@@ -402,6 +443,24 @@ export function useFerrySchedule() {
     document.removeEventListener('visibilitychange', handleVisibilityChange)
   })
 
+  // Utility function for testing holiday functionality
+  const testHolidayForDate = (dateString: string) => {
+    const testDate = new Date(dateString)
+    const hkDate = toZonedTime(testDate, HONG_KONG_TIMEZONE)
+    const isHoliday = isPublicHoliday(hkDate)
+    const dayType = getDayType(hkDate)
+
+    console.log(`=== Holiday Test for ${dateString} ===`)
+    console.log(`Hong Kong date: ${format(hkDate, 'yyyy-MM-dd')}`)
+    console.log(`Is public holiday: ${isHoliday}`)
+    console.log(`Day type: ${dayType}`)
+    console.log(`Available holidays: ${publicHolidays.value.length}`)
+    console.log(`First few holidays: ${publicHolidays.value.slice(0, 5).join(', ')}`)
+    console.log('=====================================')
+
+    return { isHoliday, dayType, hkDate: format(hkDate, 'yyyy-MM-dd') }
+  }
+
   return {
     scheduleData,
     nextFerries,
@@ -410,6 +469,8 @@ export function useFerrySchedule() {
     loading,
     error,
     getDayType,
-    isPublicHoliday
+    isPublicHoliday,
+    testHolidayForDate,
+    publicHolidays: publicHolidays.value
   }
 }
