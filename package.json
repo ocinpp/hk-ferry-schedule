@@ -9,20 +9,20 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.1.11",
-    "@types/papaparse": "^5.3.16",
-    "axios": "^1.12.2",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/papaparse": "^5.5.2",
+    "axios": "^1.20.0",
     "axios-retry": "^4.5.0",
-    "date-fns": "^4.1.0",
+    "date-fns": "^4.4.0",
     "date-fns-tz": "^3.2.0",
-    "papaparse": "^5.5.3",
-    "tailwindcss": "^4.1.11",
-    "vue": "^3.4.38"
+    "papaparse": "^5.7.0",
+    "tailwindcss": "^4.3.3",
+    "vue": "^3.5.44"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^6.0.1",
+    "@vitejs/plugin-vue": "^6.0.10",
     "typescript": "^5.5.3",
-    "vite": "^7.1.9",
-    "vue-tsc": "^2.1.4"
+    "vite": "^8.3.4",
+    "vue-tsc": "^3.3.13"
   }
 }
